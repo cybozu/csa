@@ -135,12 +135,14 @@ func runDraftCmd(cmd *cobra.Command, args []string, draft bool) error {
 		title = firstSummary
 	}
 
-	issueLink := fmt.Sprintf("issue: %s/%s#%d", issueRepo.Owner, issueRepo.Name, draftOpts.issue)
-	if !strings.Contains(firstBody, issueLink) {
-		if !strings.HasSuffix(firstBody, "\n") {
-			firstBody += "\n"
+	if draftOpts.issue != 0 {
+		issueLink := fmt.Sprintf("issue: %s/%s#%d", issueRepo.Owner, issueRepo.Name, draftOpts.issue)
+		if !strings.Contains(firstBody, issueLink) {
+			if !strings.HasSuffix(firstBody, "\n") {
+				firstBody += "\n"
+			}
+			firstBody += issueLink
 		}
-		firstBody += issueLink
 	}
 
 	_, err = createPR(ctx, gc, curRepo, defBranch, branch, title, firstBody, draft)
