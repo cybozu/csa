@@ -135,22 +135,45 @@ func runDraftCmd(cmd *cobra.Command, args []string, draft bool) error {
 		title = firstSummary
 	}
 
+	message := firstBody
 	if draftOpts.issue != 0 {
-		issueLink := fmt.Sprintf("issue: %s/%s#%d", issueRepo.Owner, issueRepo.Name, draftOpts.issue)
-		if !strings.Contains(firstBody, issueLink) {
-			if !strings.HasSuffix(firstBody, "\n") {
-				firstBody += "\n"
-			}
-			firstBody += issueLink
-		}
+		message = insertIssueLink(message, issueRepo.Owner, issueRepo.Name, draftOpts.issue)
 	}
 
-	_, err = createPR(ctx, gc, curRepo, defBranch, branch, title, firstBody, draft)
+	_, err = createPR(ctx, gc, curRepo, defBranch, branch, title, message, draft)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// insertIssueLink inserts issue link before Signed-off-by: into a commit message.
+func insertIssueLink(message string, issueRepoOwner, issueRepoName string, issueNum int) string {
+	issueLink := fmt.Sprintf("issue: %s/%s#%d", issueRepoOwner, issueRepoName, issueNum)
+	signedOffBy := "Signed-off-by:"
+
+	if strings.Contains(message, issueLink) {
+		return message
+	}
+
+	messageFragment := message
+	var signedOfByFragment string
+	if index := strings.Index(message, signedOffBy); index != -1 {
+		messageFragment = message[0:index]
+		signedOfByFragment = message[index:]
+	}
+
+	generatedMessage := messageFragment
+	if messageFragment != "" && !strings.HasSuffix(messageFragment, "\n") {
+		generatedMessage += "\n"
+	}
+	generatedMessage += issueLink
+	if signedOfByFragment != "" {
+		generatedMessage += "\n" + signedOfByFragment
+	}
+
+	return generatedMessage
 }
 
 func askYorN(query string) (bool, error) {
