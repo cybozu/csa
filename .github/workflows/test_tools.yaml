@@ -1,0 +1,16 @@
+name: test_tools
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+jobs:
+  test:
+    name: test tools
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+      - run: |
+          make test
+          make git-csa
